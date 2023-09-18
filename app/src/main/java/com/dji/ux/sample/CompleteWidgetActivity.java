@@ -146,7 +146,6 @@ public class CompleteWidgetActivity extends Activity {
     private double minangle,maxangle;
     private boolean tracktype; //0 is manual, 1 is auto
     private boolean selecting; // whether target is still being selected
-    private double focalLength;
     DecimalFormat df = new DecimalFormat("#.##");
 
 
@@ -191,7 +190,7 @@ public class CompleteWidgetActivity extends Activity {
                             lng1 = aircraftcords.getLatitude();
                             h1 = aircraftcords.getAltitude();
                             t1 = System.currentTimeMillis();
-                        }while(Math.abs(targetY-0.5) + Math.abs(targetX-0.5) > 0.04);
+                        }while(coord1[0] == 0 && coord1[1] == 0 && coord1[2] == 0);
 
                         try {
                             os = new FileOutputStream(file, true);
@@ -225,7 +224,7 @@ public class CompleteWidgetActivity extends Activity {
                             lng2 = aircraftcords.getLatitude();
                             h2 = aircraftcords.getAltitude();
                             t2 = System.currentTimeMillis();
-                        }while(Math.abs(targetY-0.5) + Math.abs(targetX-0.5) > 0.04);
+                        }while(coord1[0] == 0 && coord1[1] == 0 && coord1[2] == 0);
 
                         try {
                             os = new FileOutputStream(file, true);
@@ -541,8 +540,11 @@ public class CompleteWidgetActivity extends Activity {
     LaserMeasureInformation.Callback lasermeasurementcallback = new LaserMeasureInformation.Callback() {
         @Override
         public void onUpdate(LaserMeasureInformation laserMeasureInformation) {
-            if (laserMeasureInformation != null) {
-                laserDistance = laserMeasureInformation.getTargetDistance();
+            if (laserMeasureInformation != null && ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT) {
+                if(targetList.get(0).getBoundInfo().getCenterX() - 0.5 > 0.03 || targetList.get(0).getBoundInfo().getCenterY() - 0.5 > 0.03)
+                    laserDistance = 0;
+                else
+                    laserDistance = laserMeasureInformation.getTargetDistance();
             }
         }
     };
