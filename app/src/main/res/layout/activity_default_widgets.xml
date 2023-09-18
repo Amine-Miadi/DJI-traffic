@@ -7,10 +7,6 @@
     android:background="@color/background_blue"
     android:id="@+id/root_view"
     tools:context=".MainActivity">
-    <SeekBar
-        android:id="@+id/seekBar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
 
     <FrameLayout
         android:id="@+id/targets_tags"
@@ -64,104 +60,6 @@
             android:textColor="#2196F3"
             android:textSize="34sp" />
 
-
-        <TextView
-            android:id="@+id/measurementtime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="550dp"
-            android:layout_marginTop="270dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="120dp"
-            android:background="@color/dark_gray"
-            android:gravity="center"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/deviation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="550dp"
-            android:layout_marginTop="230dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="160dp"
-            android:background="@color/dark_gray"
-            android:gravity="center"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/measurementerr"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="550dp"
-            android:layout_marginTop="310dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="80dp"
-            android:background="@color/dark_gray"
-            android:gravity="center"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/minDist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="550dp"
-            android:layout_marginTop="190dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="200dp"
-            android:background="@color/dark_gray"
-            android:gravity="center"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/maxDist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="550dp"
-            android:layout_marginTop="150dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="240dp"
-            android:background="@color/dark_gray"
-            android:gravity="center"
-            android:text="" />
-
-        <TextView
-            android:id="@+id/speed_limit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginStart="550dp"
-            android:layout_marginTop="110dp"
-            android:layout_marginEnd="120dp"
-            android:layout_marginBottom="280dp"
-            android:background="@color/dark_gray"
-            android:gravity="center"
-            android:text="" />
-
-
         <TextView
             android:id="@+id/centerdot"
             android:layout_width="5dp"
@@ -208,7 +106,206 @@
 
     </RelativeLayout>
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/params_layout">
+        <TextView
+            android:id="@+id/measurementtime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="530dp"
+            android:layout_marginTop="270dp"
+            android:layout_marginEnd="140dp"
+            android:layout_marginBottom="125dp"
+            android:background="@color/dark_gray"
+            android:gravity="center"
+            android:text="" />
 
+        <TextView
+            android:id="@+id/deviation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="530dp"
+            android:layout_marginTop="230dp"
+            android:layout_marginEnd="140dp"
+            android:layout_marginBottom="165dp"
+            android:background="@color/dark_gray"
+            android:gravity="center"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/measurementerr"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="530dp"
+            android:layout_marginTop="310dp"
+            android:layout_marginEnd="140dp"
+            android:layout_marginBottom="85dp"
+            android:background="@color/dark_gray"
+            android:gravity="center"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/minDist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="530dp"
+            android:layout_marginTop="190dp"
+            android:layout_marginEnd="140dp"
+            android:layout_marginBottom="205dp"
+            android:background="@color/dark_gray"
+            android:gravity="center"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/maxDist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="530dp"
+            android:layout_marginTop="150dp"
+            android:layout_marginEnd="140dp"
+            android:layout_marginBottom="245dp"
+            android:background="@color/dark_gray"
+            android:gravity="center"
+            android:text="" />
+
+        <TextView
+            android:id="@+id/speed_limit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="530dp"
+            android:layout_marginTop="110dp"
+            android:layout_marginEnd="140dp"
+            android:layout_marginBottom="285dp"
+            android:background="@color/dark_gray"
+            android:gravity="center"
+            android:text="" />
+        <Button
+            android:id="@+id/button10"
+            android:layout_width="50dp"
+            android:layout_height="5dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="630dp"
+            android:layout_marginTop="110dp"
+            android:layout_marginEnd="55dp"
+            android:layout_marginRight="34dp"
+            android:layout_marginBottom="285dp"
+            android:text="Speed limit"
+            android:background="@drawable/button"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+        <Button
+            android:id="@+id/button9"
+            android:layout_width="50dp"
+            android:layout_height="5dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="630dp"
+            android:layout_marginTop="150dp"
+            android:layout_marginEnd="55dp"
+            android:layout_marginRight="34dp"
+            android:layout_marginBottom="245dp"
+            android:includeFontPadding="false"
+            android:text="maxDist"
+            android:background="@drawable/button"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+        <Button
+            android:id="@+id/button8"
+            android:layout_width="50dp"
+            android:layout_height="5dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="630dp"
+            android:layout_marginTop="190dp"
+            android:layout_marginEnd="55dp"
+            android:layout_marginBottom="205dp"
+            android:text="minDist"
+            android:background="@drawable/button"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+        <Button
+            android:id="@+id/button7"
+            android:layout_width="50dp"
+            android:layout_height="5dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="630dp"
+            android:layout_marginTop="230dp"
+            android:layout_marginEnd="55dp"
+            android:layout_marginBottom="165dp"
+            android:text="n_measurments"
+            android:background="@drawable/button"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+        <Button
+            android:id="@+id/button6"
+            android:layout_width="50dp"
+            android:layout_height="5dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="630dp"
+            android:layout_marginTop="270dp"
+            android:layout_marginEnd="55dp"
+            android:layout_marginBottom="125dp"
+            android:text="timeSpan"
+            android:background="@drawable/button"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+        <Button
+            android:id="@+id/button5"
+            android:layout_width="50dp"
+            android:layout_height="5dp"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginStart="630dp"
+            android:layout_marginTop="310dp"
+            android:layout_marginEnd= "55dp"
+            android:layout_marginBottom="85dp"
+            android:background="@drawable/button"
+            android:text="m_error"
+            android:textSize="8sp"
+            tools:ignore="SmallSp" />
+
+    </RelativeLayout>
 
 
     <dji.ux.workflow.CompassCalibratingWorkFlow
@@ -427,6 +524,7 @@
         android:layout_marginEnd="503dp"
         android:layout_marginBottom="109dp"
         android:text="T_1"
+        android:background="@drawable/button"
         android:textSize="8sp"
         tools:ignore="SmallSp" />
     <Button
@@ -442,6 +540,7 @@
         android:layout_marginEnd="417dp"
         android:layout_marginBottom="109dp"
         android:text="T_2"
+        android:background="@drawable/button"
         android:textSize="8sp"
         tools:ignore="SmallSp" />
     <Button
@@ -457,6 +556,7 @@
         android:layout_marginEnd="331dp"
         android:layout_marginBottom="109dp"
         android:text="T_3"
+        android:background="@drawable/button"
         android:textSize="8sp"
         tools:ignore="SmallSp" />
     <Button
@@ -472,22 +572,7 @@
         android:layout_marginEnd="245dp"
         android:layout_marginBottom="109dp"
         android:text="Stop Tracking"
-        android:textSize="8sp"
-        tools:ignore="SmallSp" />
-    <Button
-        android:id="@+id/button10"
-        android:layout_width="50dp"
-        android:layout_height="5dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="637dp"
-        android:layout_marginTop="110dp"
-        android:layout_marginEnd="49dp"
-        android:layout_marginRight="34dp"
-        android:layout_marginBottom="280dp"
-        android:text="Speed limit"
+        android:background="@drawable/button"
         android:textSize="8sp"
         tools:ignore="SmallSp" />
     <Button
@@ -504,6 +589,7 @@
         android:layout_marginRight="34dp"
         android:layout_marginBottom="10dp"
         android:text="Manual Track"
+        android:background="@drawable/button"
         android:textSize="8sp"
         tools:ignore="SmallSp" />
     <Button
@@ -520,85 +606,28 @@
         android:layout_marginRight="34dp"
         android:layout_marginBottom="10dp"
         android:text="Auto Track"
+        android:background="@drawable/button"
         android:textSize="8sp"
         tools:ignore="SmallSp" />
+
     <Button
-        android:id="@+id/button9"
+        android:id="@+id/params"
         android:layout_width="50dp"
         android:layout_height="5dp"
         android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginStart="637dp"
-        android:layout_marginTop="150dp"
-        android:layout_marginEnd="49dp"
-        android:layout_marginRight="34dp"
-        android:layout_marginBottom="240dp"
-        android:includeFontPadding="false"
-        android:text="maxDist"
-        android:textSize="8sp"
+        android:layout_marginStart="717dp"
+        android:layout_marginTop="284dp"
+        android:layout_marginEnd="0dp"
+        android:layout_marginBottom="105dp"
+        android:text="⚙"
+        android:background="@drawable/button"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
         tools:ignore="SmallSp" />
-    <Button
-        android:id="@+id/button8"
-        android:layout_width="50dp"
-        android:layout_height="5dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="637dp"
-        android:layout_marginTop="190dp"
-        android:layout_marginEnd="49dp"
-        android:layout_marginBottom="200dp"
-        android:text="minDist"
-        android:textSize="8sp"
-        tools:ignore="SmallSp" />
-    <Button
-        android:id="@+id/button7"
-        android:layout_width="50dp"
-        android:layout_height="5dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="636dp"
-        android:layout_marginTop="230dp"
-        android:layout_marginEnd="50dp"
-        android:layout_marginBottom="160dp"
-        android:text="n_measurments"
-        android:textSize="8sp"
-        tools:ignore="SmallSp" />
-    <Button
-        android:id="@+id/button6"
-        android:layout_width="50dp"
-        android:layout_height="5dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="637dp"
-        android:layout_marginTop="270dp"
-        android:layout_marginEnd="49dp"
-        android:layout_marginBottom="120dp"
-        android:text="timeSpan"
-        android:textSize="8sp"
-        tools:ignore="SmallSp" />
-    <Button
-        android:id="@+id/button5"
-        android:layout_width="50dp"
-        android:layout_height="5dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginStart="638dp"
-        android:layout_marginTop="310dp"
-        android:layout_marginEnd="48dp"
-        android:layout_marginBottom="80dp"
-        android:text="m_error"
-        android:textSize="8sp"
-        tools:ignore="SmallSp" />
+
 
     <dji.ux.widget.controls.LensControlWidget
         android:id="@+id/camera_lens_control"

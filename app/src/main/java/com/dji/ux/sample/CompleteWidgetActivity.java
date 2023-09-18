@@ -28,6 +28,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.InputType;
+import android.text.Layout;
 import android.text.TextUtils;
 import android.view.Display;
 import android.view.Gravity;
@@ -135,9 +136,6 @@ public class CompleteWidgetActivity extends Activity {
     //cartesian coordinates of the target
     private double[] targetxyz = new double[3];
     private double pitch,yaw;
-
-    private double startPitch,startYaw;
-    //target screen coordinates
     private double targetX = -1,targetY = -1;
     private MediaManager mediaManager;
     private File file;
@@ -156,7 +154,7 @@ public class CompleteWidgetActivity extends Activity {
 
             double[] coord1,coord2;
             double distance,t1,t2;          //distance from drone to aircraft and the times it was measured at
-            double lat1=0,lat2=0,lng1=0,lng2=0,h1=0,h2=0;   //aircraft position at first and second measure of distance
+            double lat1,lat2,lng1,lng2,h1,h2;   //aircraft position at first and second measure of distance
 
             while(true) {
                 double[] speeds;
@@ -306,6 +304,26 @@ public class CompleteWidgetActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_default_widgets);
+
+        //init textfields
+        TextView minDist = findViewById(R.id.minDist);
+        minDist.setText(minD + "m");
+
+        TextView maxDist = findViewById(R.id.maxDist);
+        maxDist.setText(maxD + "m");
+
+        TextView measurements_number = findViewById(R.id.deviation);
+        measurements_number.setText(String.valueOf(n_measurements));
+
+        TextView measurement_time = findViewById(R.id.measurementtime);
+        measurement_time.setText(measurementtime + "ms");
+
+        TextView speedlimit = findViewById(R.id.speed_limit);
+        speedlimit.setText(speedLimit + "km/h");
+
+        TextView m_err = findViewById(R.id.measurementerr);
+        m_err.setText(measurementerr + "km/h");
+
         //init the buttons
         Button Button1 = findViewById(R.id.button1);
         Button1.setOnClickListener(view -> lookATarget1(view));
@@ -343,23 +361,9 @@ public class CompleteWidgetActivity extends Activity {
         Button Button12 = findViewById(R.id.button12);
         Button12.setOnClickListener(view -> manualTrack(view));
 
-        TextView minDist = findViewById(R.id.minDist);
-        minDist.setText(minD + "m");
-
-        TextView maxDist = findViewById(R.id.maxDist);
-        maxDist.setText(maxD + "m");
-
-        TextView measurements_number = findViewById(R.id.deviation);
-        measurements_number.setText(String.valueOf(n_measurements));
-
-        TextView measurement_time = findViewById(R.id.measurementtime);
-        measurement_time.setText(measurementtime + "ms");
-
-        TextView speedlimit = findViewById(R.id.speed_limit);
-        speedlimit.setText(speedLimit + "km/h");
-
-        TextView m_err = findViewById(R.id.measurementerr);
-        m_err.setText(measurementerr + "km/h");
+        Button params = findViewById(R.id.params);
+        params.setOnClickListener(view -> toggleParams(view));
+        params.setBackgroundColor(Color.parseColor("#CC000000"));
 
 
         try {
@@ -540,7 +544,7 @@ public class CompleteWidgetActivity extends Activity {
     LaserMeasureInformation.Callback lasermeasurementcallback = new LaserMeasureInformation.Callback() {
         @Override
         public void onUpdate(LaserMeasureInformation laserMeasureInformation) {
-            if (laserMeasureInformation != null && ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT) {
+            if(laserMeasureInformation != null && ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT && targetList!=null && targetList.size()>0) {
                 if(targetList.get(0).getBoundInfo().getCenterX() - 0.5 > 0.03 || targetList.get(0).getBoundInfo().getCenterY() - 0.5 > 0.03)
                     laserDistance = 0;
                 else
@@ -578,6 +582,9 @@ public class CompleteWidgetActivity extends Activity {
                                 targetX = t.getBoundInfo().getCenterX();
                                 targetY = t.getBoundInfo().getCenterY();
                                 targets += t.getType().toString() + "   |   " +t.getId()
+                                        +"\n laserdistance: " + df.format(laserDistance)
+                                        +"\n DeltaX: " + (t.getBoundInfo().getCenterX()-0.5)
+                                        +"\n DeltaY: " + (t.getBoundInfo().getCenterY()-0.5)
                                         +"\n###################################\n";
                                 if(ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT)
                                     targets += "\n speed: " + df.format(Math.sqrt(Math.pow(t.getVelocityInfo().getEast(),2)+Math.pow(t.getVelocityInfo().getNorth(),2)+Math.pow(t.getVelocityInfo().getUp(),2))*3.6);
@@ -593,14 +600,14 @@ public class CompleteWidgetActivity extends Activity {
                                     TextView targetTextView = new TextView(CompleteWidgetActivity.this);
                                     targetTextView.setText(String.valueOf(t.getId()));
                                     targetTextView.setId(t.getId());
-                                    targetTextView.setBackgroundColor(Color.GRAY);
-                                    targetTextView.setHeight(70);
-                                    targetTextView.setWidth(175);
+                                    targetTextView.setBackground(getDrawable(R.drawable.target));
+                                    targetTextView.setHeight(100);
+                                    targetTextView.setWidth(100);
                                     targetTextView.setVisibility(View.VISIBLE);
                                     targetTextView.setGravity(Gravity.CENTER);
                                     targetTextView.setOnClickListener(view -> track(t.getId()));
                                     FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                                    params.leftMargin = (int) (targetX * deviceWidth) - 100;
+                                    params.leftMargin = (int) (targetX * deviceWidth) - 50;
                                     params.topMargin = (int) (targetY * deviceHeight) - 50;
                                     targetTextView.setLayoutParams(params);
                                     layout.addView(targetTextView);
@@ -852,7 +859,7 @@ public class CompleteWidgetActivity extends Activity {
     }
     public void manualTrack(View view){
         tracktype = false;
-        findViewById(R.id.button12).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4cc26b")));
+        findViewById(R.id.button12).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2bffed")));
         findViewById(R.id.button11).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#ffffff")));
         camera.getLenses().get(0).setHybridZoomFocalLength(317,completionCallback);
         if(!speedsThread.isAlive())
@@ -862,11 +869,18 @@ public class CompleteWidgetActivity extends Activity {
         tracktype = true;
         minangle = Math.atan(minD/aircraftcords.getAltitude());
         maxangle = Math.atan(maxD/aircraftcords.getAltitude());
-        findViewById(R.id.button11).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4cc26b")));
+        findViewById(R.id.button11).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2bffed")));
         findViewById(R.id.button12).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#ffffff")));
         camera.getLenses().get(0).setHybridZoomFocalLength(317,completionCallback);
         if(!speedsThread.isAlive())
             speedsThread.start();
+    }
+    public void toggleParams(View view){
+        RelativeLayout params_layout = findViewById(R.id.params_layout);
+        if(params_layout.getVisibility() == View.VISIBLE)
+            params_layout.setVisibility(View.GONE);
+        else
+            params_layout.setVisibility(View.VISIBLE);
     }
     public CommonCallbacks.CompletionCallback fetchMediacallback = new CommonCallbacks.CompletionCallback() {
         @Override
