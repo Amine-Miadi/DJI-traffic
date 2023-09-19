@@ -24,6 +24,7 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -39,11 +40,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 
 import androidx.annotation.NonNull;
+
+import org.w3c.dom.Text;
 
 import dji.common.camera.LaserMeasureInformation;
 import dji.common.camera.SettingsDefinitions;
@@ -73,6 +77,7 @@ import dji.sdk.products.Aircraft;
 import dji.sdk.sdkmanager.DJISDKManager;
 import dji.ux.panel.CameraSettingAdvancedPanel;
 import dji.ux.panel.CameraSettingExposurePanel;
+import dji.ux.panel.SpeakerPanel;
 import dji.ux.widget.FPVOverlayWidget;
 import dji.ux.widget.FPVWidget;
 import dji.ux.widget.ThermalPaletteWidget;
@@ -144,6 +149,8 @@ public class CompleteWidgetActivity extends Activity {
     private double minangle,maxangle;
     private boolean tracktype; //0 is manual, 1 is auto
     private boolean selecting; // whether target is still being selected
+
+    private int zoomMin = 317,zoomMax = 5530, zoomFactor = 1;
     DecimalFormat df = new DecimalFormat("#.##");
 
 
@@ -194,7 +201,7 @@ public class CompleteWidgetActivity extends Activity {
                             os = new FileOutputStream(file, true);
                             os.write(("Start measure 1 :\nlaserDistance1: "
                                     + laserDistance + "\npitch1: " + pitch + "\nyaw1: " + yaw
-                                    + "\nΔx: " + (targetList.get(0).getBoundInfo().getCenterX()-0.5) + "\nΔy: " + (targetList.get(0).getBoundInfo().getCenterY()-0.5)
+                                    + "\nΔx: " + Math.abs(targetList.get(0).getBoundInfo().getCenterX()-0.5) + "\nΔy: " + Math.abs(targetList.get(0).getBoundInfo().getCenterY()-0.5)
                                     + "\nEnd measure 1\n\n").getBytes());
                             os.close();
                         } catch (Exception e) {
@@ -229,7 +236,7 @@ public class CompleteWidgetActivity extends Activity {
                             os.write(("\n\nStart Measure2: \nlaserDistance2: "
                                     + laserDistance + "\npitch2: " + pitch + "\nyaw2: " + yaw
                                     +"\nΔx: " + (targetList.get(0).getBoundInfo().getCenterX()-0.5) + "\nΔy: " + (targetList.get(0).getBoundInfo().getCenterY()-0.5)
-                                    + "\nEnd Measure 2").getBytes());
+                                    + "\nEnd Measure 2\n").getBytes());
                             os.close();
                         } catch (Exception e) {
                             os = new FileOutputStream(file, true);
@@ -361,9 +368,50 @@ public class CompleteWidgetActivity extends Activity {
         Button Button12 = findViewById(R.id.button12);
         Button12.setOnClickListener(view -> manualTrack(view));
 
+        TextView maxZoom = findViewById(R.id.maxZoomFactor);
+        maxZoom.setText(String.valueOf(zoomMax));
+
+        TextView minZoom = findViewById(R.id.minZoomFactor);
+        minZoom.setText(String.valueOf(zoomMin));
+
+        TextView currentZoom = findViewById(R.id.currentZoomFactor);
+        currentZoom.setText(String.valueOf(zoomMin));
+
+        SeekBar zoombar = findViewById(R.id.zoombar);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            zoombar.setMin(zoomMin);
+        }
+        zoombar.setMax(zoomMax);
+
+        Button upZoom = findViewById(R.id.upZoom);
+        upZoom.setOnClickListener((View view) -> {
+            if(zoomFactor < 10){
+                zoomFactor++;
+                zoomMin += 5530;zoomMax +=5530;
+                maxZoom.setText((zoomFactor*20.0) + "x");
+                minZoom.setText((zoomFactor*20.0) + "x");
+            }
+        });
+
+        Button downZoom = findViewById(R.id.downZoom);
+        downZoom.setOnClickListener((View view) -> {
+            if(zoomFactor > 1){
+                zoomFactor--;
+                zoomMin -= 5530;zoomMax -=5530;
+                maxZoom.setText(String.valueOf(zoomMax));
+                minZoom.setText(String.valueOf(zoomMin));
+            }
+        });
+
+
         Button params = findViewById(R.id.params);
-        params.setOnClickListener(view -> toggleParams(view));
-        params.setBackgroundColor(Color.parseColor("#CC000000"));
+        RelativeLayout params_layout = findViewById(R.id.params_layout);
+        params.setOnClickListener(view -> toggleLayout(params_layout));
+
+        Button zoom = findViewById(R.id.zoom);
+        RelativeLayout zoom_layout = findViewById(R.id.zoom_layout);
+        zoom.setOnClickListener(view -> toggleLayout(zoom_layout));
+
 
 
         try {
@@ -424,6 +472,7 @@ public class CompleteWidgetActivity extends Activity {
                     aircraft.getFlightController().setStateCallback(flightstatecallback);
                     gimbal.setStateCallback(gimbalCallback);
                     ST_operator.enterSmartTrack(completionCallback);
+                    zoombar.setOnSeekBarChangeListener(zoomListener);
                 }catch(Exception e ){
                 }
                 if(camera==null || gimbal == null || aircraft==null)
@@ -545,7 +594,7 @@ public class CompleteWidgetActivity extends Activity {
         @Override
         public void onUpdate(LaserMeasureInformation laserMeasureInformation) {
             if(laserMeasureInformation != null && ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT && targetList!=null && targetList.size()>0) {
-                if(targetList.get(0).getBoundInfo().getCenterX() - 0.5 > 0.03 || targetList.get(0).getBoundInfo().getCenterY() - 0.5 > 0.03)
+                if(Math.abs(targetList.get(0).getBoundInfo().getCenterX()) - 0.5 > 0.03 || Math.abs(targetList.get(0).getBoundInfo().getCenterY()) - 0.5 > 0.03)
                     laserDistance = 0;
                 else
                     laserDistance = laserMeasureInformation.getTargetDistance();
@@ -583,8 +632,8 @@ public class CompleteWidgetActivity extends Activity {
                                 targetY = t.getBoundInfo().getCenterY();
                                 targets += t.getType().toString() + "   |   " +t.getId()
                                         +"\n laserdistance: " + df.format(laserDistance)
-                                        +"\n DeltaX: " + (t.getBoundInfo().getCenterX()-0.5)
-                                        +"\n DeltaY: " + (t.getBoundInfo().getCenterY()-0.5)
+                                        +"\n DeltaX: " + Math.abs(t.getBoundInfo().getCenterX()-0.5)
+                                        +"\n DeltaY: " + Math.abs(t.getBoundInfo().getCenterY()-0.5)
                                         +"\n###################################\n";
                                 if(ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT)
                                     targets += "\n speed: " + df.format(Math.sqrt(Math.pow(t.getVelocityInfo().getEast(),2)+Math.pow(t.getVelocityInfo().getNorth(),2)+Math.pow(t.getVelocityInfo().getUp(),2))*3.6);
@@ -592,7 +641,7 @@ public class CompleteWidgetActivity extends Activity {
                                 if(findViewById(t.getId()) != null) {
                                     TextView targetTextView = findViewById(t.getId());
                                     FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                                    params.leftMargin = (int) (targetX * deviceWidth) - 100;
+                                    params.leftMargin = (int) (targetX * deviceWidth) - 50;
                                     params.topMargin = (int) (targetY * deviceHeight) - 50;
                                     targetTextView.setLayoutParams(params);
                                 }
@@ -614,12 +663,13 @@ public class CompleteWidgetActivity extends Activity {
                                     layout.bringChildToFront(targetTextView);
                                 }
                             }
-                            mainDisplay(targets );
+                            //mainDisplay(targets );
                             targets = "";
                         }else{
                             targetX = -1;targetY = -1;
                             layout.removeAllViews();
-                            mainDisplay("no targets detected.");
+                            //mainDisplay("no targets detected.");
+                            mainDisplay(String.valueOf(zoomFactor));
                         }
                     }
                 }catch(Exception e){
@@ -875,12 +925,11 @@ public class CompleteWidgetActivity extends Activity {
         if(!speedsThread.isAlive())
             speedsThread.start();
     }
-    public void toggleParams(View view){
-        RelativeLayout params_layout = findViewById(R.id.params_layout);
-        if(params_layout.getVisibility() == View.VISIBLE)
-            params_layout.setVisibility(View.GONE);
+    public void toggleLayout(RelativeLayout layout){
+        if(layout.getVisibility() == View.VISIBLE)
+            layout.setVisibility(View.GONE);
         else
-            params_layout.setVisibility(View.VISIBLE);
+            layout.setVisibility(View.VISIBLE);
     }
     public CommonCallbacks.CompletionCallback fetchMediacallback = new CommonCallbacks.CompletionCallback() {
         @Override
@@ -1006,4 +1055,24 @@ public class CompleteWidgetActivity extends Activity {
             }
         }
     }
+    SeekBar.OnSeekBarChangeListener zoomListener = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+            int zoom = i + (zoomFactor-1) * 5530;
+            camera.getLenses().get(0).setHybridZoomFocalLength(zoom,completionCallback);
+            TextView currentzoom = findViewById(R.id.currentZoomFactor);
+            currentzoom.setText(String.valueOf(zoom));
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+
+        }
+    };
+
 }

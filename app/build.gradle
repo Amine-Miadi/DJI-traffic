@@ -10,7 +10,7 @@ android {
     compileSdkVersion 30
     defaultConfig {
         applicationId "com.dji.ux.sample"
-        minSdkVersion 23
+        minSdkVersion 21
         targetSdkVersion 30
         multiDexEnabled true
         vectorDrawables.useSupportLibrary = true
