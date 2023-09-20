@@ -388,18 +388,24 @@ public class CompleteWidgetActivity extends Activity {
             if(zoomFactor < 10){
                 zoomFactor++;
                 zoomMin += 5530;zoomMax +=5530;
-                maxZoom.setText((zoomFactor*20.0) + "x");
-                minZoom.setText((zoomFactor*20.0) + "x");
+                maxZoom.setText((zoomFactor*20)+ "");
+                minZoom.setText(((zoomFactor-1)*20)+ "");
             }
         });
 
         Button downZoom = findViewById(R.id.downZoom);
         downZoom.setOnClickListener((View view) -> {
+            if(zoomFactor == 2){
+                zoomFactor--;
+                zoomMin = 317;zoomMax =5530;
+                maxZoom.setText((zoomFactor*20)+ "");
+                minZoom.setText(((zoomFactor-1)*20)+ "");
+            }
             if(zoomFactor > 1){
                 zoomFactor--;
                 zoomMin -= 5530;zoomMax -=5530;
-                maxZoom.setText(String.valueOf(zoomMax));
-                minZoom.setText(String.valueOf(zoomMin));
+                maxZoom.setText((zoomFactor*20)+ "");
+                minZoom.setText(((zoomFactor-1)*20)+ "");
             }
         });
 
@@ -1049,8 +1055,6 @@ public class CompleteWidgetActivity extends Activity {
     public void track(int id){
         for (int i = 0; i < targetList.size(); i++) {
             if(targetList.get(i).getId() == id) {
-                double x = targetList.get(i).getBoundInfo().getCenterX();
-                double y = targetList.get(i).getBoundInfo().getCenterY();
                 ST_operator.selectManualTarget(targetList.get(i).getBoundInfo(), selectTargetCallback);
             }
         }
