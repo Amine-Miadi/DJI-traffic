@@ -110,7 +110,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:id="@+id/zoom_layout"
-        android:visibility="visible"
+        android:visibility="gone"
         >
         <Button
             android:id="@+id/upZoom"
@@ -171,10 +171,10 @@
         <TextView
             android:id="@+id/currentZoomFactor"
             android:layout_width="50dp"
-            android:layout_height="20dp"
+            android:layout_height="40dp"
             android:layout_alignParentTop="true"
             android:layout_alignParentEnd="true"
-            android:layout_marginTop="222.5dp"
+            android:layout_marginTop="222dp"
             android:layout_marginEnd="120dp"
             android:background="@drawable/button_dark"
             android:gravity="center"

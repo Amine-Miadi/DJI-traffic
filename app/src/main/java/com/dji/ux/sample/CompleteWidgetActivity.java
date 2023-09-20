@@ -3,7 +3,6 @@ package com.dji.ux.sample;
 
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 import static dji.common.flightcontroller.flightassistant.SmartTrackSubMode.SMART_TRACK_ZOOM_FREE;
-import static dji.common.flightcontroller.flightassistant.SmartTrackSubMode.find;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,7 +14,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -27,9 +25,7 @@ import android.media.ToneGenerator;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.text.InputType;
-import android.text.Layout;
 import android.text.TextUtils;
 import android.view.Display;
 import android.view.Gravity;
@@ -47,8 +43,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import org.w3c.dom.Text;
-
+import dji.common.camera.CameraVideoStreamSource;
 import dji.common.camera.LaserMeasureInformation;
 import dji.common.camera.SettingsDefinitions;
 import dji.common.error.DJIError;
@@ -66,18 +61,13 @@ import dji.sdk.gimbal.Gimbal;
 import dji.sdk.media.DownloadListener;
 import dji.sdk.media.MediaFile;
 import dji.sdk.mission.MissionControl;
-
-
-
 import dji.sdk.media.MediaManager;
-
 import dji.sdk.mission.smarttrack.SmartTrackOperator;
 import dji.sdk.mission.smarttrack.SmartTrackOperatorListener;
 import dji.sdk.products.Aircraft;
 import dji.sdk.sdkmanager.DJISDKManager;
 import dji.ux.panel.CameraSettingAdvancedPanel;
 import dji.ux.panel.CameraSettingExposurePanel;
-import dji.ux.panel.SpeakerPanel;
 import dji.ux.widget.FPVOverlayWidget;
 import dji.ux.widget.FPVWidget;
 import dji.ux.widget.ThermalPaletteWidget;
@@ -300,6 +290,9 @@ public class CompleteWidgetActivity extends Activity {
                     speedsThread.sleep(300);
 
                 }catch (Exception e) {
+                    CompleteWidgetActivity.this.runOnUiThread(()->{
+                        Toast.makeText(CompleteWidgetActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+                    });
                 }
             }
         }
@@ -369,13 +362,13 @@ public class CompleteWidgetActivity extends Activity {
         Button12.setOnClickListener(view -> manualTrack(view));
 
         TextView maxZoom = findViewById(R.id.maxZoomFactor);
-        maxZoom.setText(String.valueOf(zoomMax));
+        maxZoom.setText(20+ "x");
 
         TextView minZoom = findViewById(R.id.minZoomFactor);
-        minZoom.setText(String.valueOf(zoomMin));
+        minZoom.setText(1+ "x");
 
         TextView currentZoom = findViewById(R.id.currentZoomFactor);
-        currentZoom.setText(String.valueOf(zoomMin));
+        currentZoom.setText(String.valueOf(1));
 
         SeekBar zoombar = findViewById(R.id.zoombar);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -388,8 +381,8 @@ public class CompleteWidgetActivity extends Activity {
             if(zoomFactor < 10){
                 zoomFactor++;
                 zoomMin += 5530;zoomMax +=5530;
-                maxZoom.setText((zoomFactor*20)+ "");
-                minZoom.setText(((zoomFactor-1)*20)+ "");
+                maxZoom.setText((zoomFactor*20)+ "x");
+                minZoom.setText(((zoomFactor-1)*20)+ "x");
             }
         });
 
@@ -398,14 +391,14 @@ public class CompleteWidgetActivity extends Activity {
             if(zoomFactor == 2){
                 zoomFactor--;
                 zoomMin = 317;zoomMax =5530;
-                maxZoom.setText((zoomFactor*20)+ "");
-                minZoom.setText(((zoomFactor-1)*20)+ "");
+                maxZoom.setText(20+ "x");
+                minZoom.setText(1+ "x");
             }
             if(zoomFactor > 1){
                 zoomFactor--;
                 zoomMin -= 5530;zoomMax -=5530;
-                maxZoom.setText((zoomFactor*20)+ "");
-                minZoom.setText(((zoomFactor-1)*20)+ "");
+                maxZoom.setText((zoomFactor*20)+ "x");
+                minZoom.setText(((zoomFactor-1)*20)+ "x");
             }
         });
 
@@ -445,15 +438,14 @@ public class CompleteWidgetActivity extends Activity {
 
         initCameraView();
         parentView = (ViewGroup) findViewById(R.id.root_view);
-
         fpvWidget = findViewById(R.id.fpv_widget);
         fpvOverlayWidget = findViewById(R.id.fpv_overlay_widget);
         primaryVideoView = findViewById(R.id.fpv_container);
 
-        //set the the listener to primarycamera and init secondary camera
+        //set the the listener to primarycamera
         fpvWidget.setCameraIndexListener((cameraIndex, lensIndex) -> cameraWidgetKeyIndexUpdated(fpvWidget.getCameraKeyIndex(), fpvWidget.getLensKeyIndex()));
-
-
+        fpvWidget.setSourceCameraNameVisibility(false);
+        fpvWidget.setSourceCameraSideVisibility(false);
 
         // handling date loop thread
         handler = new Handler();
@@ -471,6 +463,7 @@ public class CompleteWidgetActivity extends Activity {
                 try{
                     camera = DJISDKManager.getInstance().getProduct().getCamera();
                     camera.getLenses().get(0).setLaserMeasureInformationCallback(lasermeasurementcallback);
+                    camera.setCameraVideoStreamSource(CameraVideoStreamSource.ZOOM,completionCallback);
                     gimbal = DJISDKManager.getInstance().getProduct().getGimbal();
                     aircraft = (Aircraft) DJISDKManager.getInstance().getProduct();
                     mediaManager = camera.getMediaManager();
@@ -600,7 +593,7 @@ public class CompleteWidgetActivity extends Activity {
         @Override
         public void onUpdate(LaserMeasureInformation laserMeasureInformation) {
             if(laserMeasureInformation != null && ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT && targetList!=null && targetList.size()>0) {
-                if(Math.abs(targetList.get(0).getBoundInfo().getCenterX()) - 0.5 > 0.03 || Math.abs(targetList.get(0).getBoundInfo().getCenterY()) - 0.5 > 0.03)
+                if(Math.abs(targetList.get(0).getBoundInfo().getCenterX() - 0.5) > 0.03 || Math.abs(targetList.get(0).getBoundInfo().getCenterY() - 0.5) > 0.03)
                     laserDistance = 0;
                 else
                     laserDistance = laserMeasureInformation.getTargetDistance();
@@ -669,13 +662,12 @@ public class CompleteWidgetActivity extends Activity {
                                     layout.bringChildToFront(targetTextView);
                                 }
                             }
-                            //mainDisplay(targets );
+                            mainDisplay(targets );
                             targets = "";
                         }else{
                             targetX = -1;targetY = -1;
                             layout.removeAllViews();
-                            //mainDisplay("no targets detected.");
-                            mainDisplay(String.valueOf(zoomFactor));
+                            mainDisplay("no targets detected.");
                         }
                     }
                 }catch(Exception e){
@@ -701,7 +693,6 @@ public class CompleteWidgetActivity extends Activity {
             targetxyz[0] = Math.sin(y) * Math.sin(p)*distance;
             targetxyz[1] = Math.cos(y) * Math.sin(p)*distance;
             targetxyz[2] = Math.cos(p)*distance;
-
         }
     };
     FlightControllerState.Callback flightstatecallback = new FlightControllerState.Callback() {
@@ -1064,8 +1055,12 @@ public class CompleteWidgetActivity extends Activity {
         public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
             int zoom = i + (zoomFactor-1) * 5530;
             camera.getLenses().get(0).setHybridZoomFocalLength(zoom,completionCallback);
+            double slope = 1.0 * ((zoomFactor*20) - ((zoomFactor-1)*20)) / (zoomMax - zoomMin);
+            double output = (zoomFactor)*20 + slope * (zoom - zoomMin);
             TextView currentzoom = findViewById(R.id.currentZoomFactor);
-            currentzoom.setText(String.valueOf(zoom));
+            if(output < 1)currentzoom.setText("Zoom\n" + Math.round(1));
+            currentzoom.setText("Zoom\n" + Math.round(output));
+
         }
 
         @Override
