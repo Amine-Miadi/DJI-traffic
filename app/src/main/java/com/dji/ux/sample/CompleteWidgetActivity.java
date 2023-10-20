@@ -43,6 +43,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
+import dji.common.camera.CameraStreamSettings;
 import dji.common.camera.CameraVideoStreamSource;
 import dji.common.camera.LaserMeasureInformation;
 import dji.common.camera.SettingsDefinitions;
@@ -79,7 +80,6 @@ import dji.ux.widget.config.CameraConfigShutterWidget;
 import dji.ux.widget.config.CameraConfigStorageWidget;
 import dji.ux.widget.config.CameraConfigWBWidget;
 import dji.ux.widget.controls.CameraControlsWidget;
-import dji.ux.widget.controls.LensControlWidget;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -91,7 +91,6 @@ import okhttp3.Response;
  * Activity that shows all the UI elements together
  */
 public class CompleteWidgetActivity extends Activity {
-    private ViewGroup parentView;
     private FPVWidget fpvWidget;
     private FPVOverlayWidget fpvOverlayWidget;
     private RelativeLayout primaryVideoView;
@@ -105,7 +104,6 @@ public class CompleteWidgetActivity extends Activity {
     private CameraConfigStorageWidget cameraConfigStorageWidget;
     private CameraConfigSSDWidget cameraConfigSSDWidget;
     private CameraControlsWidget controlsWidget;
-    private LensControlWidget lensControlWidget;
     private ThermalPaletteWidget thermalPaletteWidget;
     private static Handler handler;
 
@@ -118,7 +116,6 @@ public class CompleteWidgetActivity extends Activity {
     private int deviceHeight;
     private int speed_limit = 100;
     private double recorded_speed = 0;
-    private int lookAtTarget;
     private SmartTrackOperator ST_operator;
     private Gimbal gimbal;
     static double laserDistance;
@@ -139,25 +136,35 @@ public class CompleteWidgetActivity extends Activity {
     private double minangle,maxangle;
     private boolean tracktype; //0 is manual, 1 is auto
     private boolean selecting; // whether target is still being selected
-
     private int zoomMin = 317,zoomMax = 5530, zoomFactor = 1;
+    private int current_screen = 0;
     DecimalFormat df = new DecimalFormat("#.##");
+    DecimalFormat df1 = new DecimalFormat("#.#");
+
+    //init camera stream sources list
 
 
     //thread for running the get speed method
     private Runnable startSpeedMonitoring = new Runnable() {
+
         @Override
         public void run() {
 
             double[] coord1,coord2;
             double distance,t1,t2;          //distance from drone to aircraft and the times it was measured at
             double lat1,lat2,lng1,lng2,h1,h2;   //aircraft position at first and second measure of distance
+            //init camera stream sources list
+            List<CameraVideoStreamSource> sources = new ArrayList<>();
+            sources.add(CameraVideoStreamSource.ZOOM);
+            CameraStreamSettings streamSettings = new CameraStreamSettings(false,sources);
+
 
             while(true) {
                 double[] speeds;
                 FileOutputStream os;
-                if(targetList.size()>0 && tracktype && !selecting && ST_operator.getCurrentState() == SmartTrackState.WAIT_TO_SELECT){
-                    ST_operator.selectManualTarget(targetList.get(0).getBoundInfo(),selectTargetCallback);
+                if(targetList != null && targetList.size()>0 && tracktype && !selecting && ST_operator.getCurrentState() == SmartTrackState.WAIT_TO_SELECT){
+                    if(targetList.size()>1) ST_operator.selectManualTarget(targetList.get(1).getBoundInfo(),selectTargetCallback);
+                    else ST_operator.selectManualTarget(targetList.get(0).getBoundInfo(),selectTargetCallback);
                     selecting = true;
                 }
                 if(ST_operator.getCurrentState() != SmartTrackState.SPOTLIGHT)continue;
@@ -174,6 +181,10 @@ public class CompleteWidgetActivity extends Activity {
                         os.close();
                     } catch (Exception e) {
                     }
+                    try{
+                        secondDisplay2(df.format(Math.sqrt(Math.pow(targetList.get(0).getVelocityInfo().getEast(), 2) + Math.pow(targetList.get(0).getVelocityInfo().getNorth(), 2) + Math.pow(targetList.get(0).getVelocityInfo().getUp(), 2))*3.6) + "km/h");
+                    }catch(Exception e){
+                    }
                     speeds = new double[n_measurements];
                     for (int j = 0; j < n_measurements;j++) {
                         //this should be if target is at the center of the screen and should be timed
@@ -185,7 +196,7 @@ public class CompleteWidgetActivity extends Activity {
                             lng1 = aircraftcords.getLatitude();
                             h1 = aircraftcords.getAltitude();
                             t1 = System.currentTimeMillis();
-                        }while(coord1[0] == 0 && coord1[1] == 0 && coord1[2] == 0);
+                        }while(coord1[0] == 0 && coord1[1] == 0 && coord1[2] == 0 && laserDistance == 0);
 
                         try {
                             os = new FileOutputStream(file, true);
@@ -219,7 +230,7 @@ public class CompleteWidgetActivity extends Activity {
                             lng2 = aircraftcords.getLatitude();
                             h2 = aircraftcords.getAltitude();
                             t2 = System.currentTimeMillis();
-                        }while(coord1[0] == 0 && coord1[1] == 0 && coord1[2] == 0);
+                        }while(coord1[0] == 0 && coord1[1] == 0 && coord1[2] == 0 && laserDistance == 0);
 
                         try {
                             os = new FileOutputStream(file, true);
@@ -274,20 +285,27 @@ public class CompleteWidgetActivity extends Activity {
 
                     //reporting a violation
                     if ( recorded_speed - measurementerr > speed_limit && ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT) {
+                        camera.setMode(SettingsDefinitions.CameraMode.SHOOT_PHOTO,completionCallback);
+                        camera.setCaptureCameraStreamSettings(streamSettings,completionCallback);
                         camera.startShootPhoto(imagecallback);
                         ToneGenerator toneGen1 = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
                         toneGen1.startTone(ToneGenerator.TONE_CDMA_PIP,600);
                         CompleteWidgetActivity.this.runOnUiThread(()->{
-                            Toast.makeText(CompleteWidgetActivity.this, "Captured a vehicle going: " + recorded_speed + " km/h in a " + df.format(speed_limit) + " zone", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(CompleteWidgetActivity.this, "Captured a vehicle going: " + df.format(recorded_speed) + " km/h in a " + df.format(speed_limit) + " zone", Toast.LENGTH_SHORT).show();
                         });
                     }
                     //displaying speed
                     secondDisplay(df.format(recorded_speed) + " km/h");
+                    try{
+                        secondDisplay2(df.format(Math.sqrt(Math.pow(targetList.get(0).getVelocityInfo().getEast(), 2) + Math.pow(targetList.get(0).getVelocityInfo().getNorth(), 2) + Math.pow(targetList.get(0).getVelocityInfo().getUp(), 2))*3.6) + "km/h");
+                    }catch(Exception e){
+                    }
+
                     if(tracktype){
                         ST_operator.exitSmartTrack(exitSmartTrackCallback);
                         rotateToAngle((Math.toDegrees(minangle)-90),0,RotationMode.ABSOLUTE_ANGLE);
                     }
-                    speedsThread.sleep(300);
+
 
                 }catch (Exception e) {
                     CompleteWidgetActivity.this.runOnUiThread(()->{
@@ -325,14 +343,6 @@ public class CompleteWidgetActivity extends Activity {
         m_err.setText(measurementerr + "km/h");
 
         //init the buttons
-        Button Button1 = findViewById(R.id.button1);
-        Button1.setOnClickListener(view -> lookATarget1(view));
-
-        Button Button2 = findViewById(R.id.button2);
-        Button2.setOnClickListener(view -> lookATarget2(view));
-
-        Button Button3 = findViewById(R.id.button3);
-        Button3.setOnClickListener(view -> lookATarget3(view));
 
         Button Button4 = findViewById(R.id.button4);
         Button4.setOnClickListener(view -> lookATarget4(view));
@@ -361,14 +371,15 @@ public class CompleteWidgetActivity extends Activity {
         Button Button12 = findViewById(R.id.button12);
         Button12.setOnClickListener(view -> manualTrack(view));
 
-        TextView maxZoom = findViewById(R.id.maxZoomFactor);
-        maxZoom.setText(20+ "x");
+        Button Button0 = findViewById(R.id.button0);
+        RelativeLayout list_layout = findViewById(R.id.list_layout);
+        Button0.setOnClickListener(view -> toggleList(list_layout));
 
-        TextView minZoom = findViewById(R.id.minZoomFactor);
-        minZoom.setText(1+ "x");
+        Button cycle_screen = findViewById(R.id.cycle_screen);
+        cycle_screen.setOnClickListener(view -> cycleScreen(view));
 
         TextView currentZoom = findViewById(R.id.currentZoomFactor);
-        currentZoom.setText(String.valueOf(1));
+        currentZoom.setText("Zoom\n" + 1.0 + "x");
 
         SeekBar zoombar = findViewById(R.id.zoombar);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -381,9 +392,17 @@ public class CompleteWidgetActivity extends Activity {
             if(zoomFactor < 10){
                 zoomFactor++;
                 zoomMin += 5530;zoomMax +=5530;
-                maxZoom.setText((zoomFactor*20)+ "x");
-                minZoom.setText(((zoomFactor-1)*20)+ "x");
             }
+            zoombar.setProgress(0);
+            int zoom = 317 + (zoomFactor-1) * 5530;
+            camera.getLenses().get(0).setHybridZoomFocalLength(zoom,completionCallback);
+            double slope = 1.0 * ((zoomFactor*20) - ((zoomFactor-1)*20)) / (zoomMax - zoomMin);
+            double output = (zoomFactor-1)*20 + slope * (zoom - zoomMin);
+            TextView currentzoom = findViewById(R.id.currentZoomFactor);
+            if(output < 1)
+                currentzoom.setText("Zoom\n" + 1.0 + "x");
+            else
+                currentzoom.setText("Zoom\n" + df1.format(output) + "x");
         });
 
         Button downZoom = findViewById(R.id.downZoom);
@@ -391,25 +410,32 @@ public class CompleteWidgetActivity extends Activity {
             if(zoomFactor == 2){
                 zoomFactor--;
                 zoomMin = 317;zoomMax =5530;
-                maxZoom.setText(20+ "x");
-                minZoom.setText(1+ "x");
             }
             if(zoomFactor > 1){
                 zoomFactor--;
                 zoomMin -= 5530;zoomMax -=5530;
-                maxZoom.setText((zoomFactor*20)+ "x");
-                minZoom.setText(((zoomFactor-1)*20)+ "x");
             }
+            zoombar.setProgress(0);
+            int zoom = 317 + (zoomFactor-1) * 5530;
+            camera.getLenses().get(0).setHybridZoomFocalLength(zoom,completionCallback);
+            double slope = 1.0 * ((zoomFactor*20) - ((zoomFactor-1)*20)) / (zoomMax - zoomMin);
+            double output = (zoomFactor-1)*20 + slope * (zoom - zoomMin);
+            TextView currentzoom = findViewById(R.id.currentZoomFactor);
+            if(output < 1)
+                currentzoom.setText("Zoom\n" + 1.0 + "x");
+            else
+                currentzoom.setText("Zoom\n" + df1.format(output) + "x");
         });
 
 
         Button params = findViewById(R.id.params);
         RelativeLayout params_layout = findViewById(R.id.params_layout);
-        params.setOnClickListener(view -> toggleLayout(params_layout));
 
         Button zoom = findViewById(R.id.zoom);
         RelativeLayout zoom_layout = findViewById(R.id.zoom_layout);
-        zoom.setOnClickListener(view -> toggleLayout(zoom_layout));
+
+        params.setOnClickListener(view -> toggleLayout(params_layout,zoom_layout));
+        zoom.setOnClickListener(view -> toggleLayout(zoom_layout,params_layout));
 
 
 
@@ -437,7 +463,6 @@ public class CompleteWidgetActivity extends Activity {
 
 
         initCameraView();
-        parentView = (ViewGroup) findViewById(R.id.root_view);
         fpvWidget = findViewById(R.id.fpv_widget);
         fpvOverlayWidget = findViewById(R.id.fpv_overlay_widget);
         primaryVideoView = findViewById(R.id.fpv_container);
@@ -455,7 +480,6 @@ public class CompleteWidgetActivity extends Activity {
         ST_operator = MissionControl.getInstance().getSmartTrackOperator();
         ST_operator.addListener(ST_listener);
         //*******************************************************
-
 
 
         final Runnable runnable = new Runnable() {
@@ -510,7 +534,6 @@ public class CompleteWidgetActivity extends Activity {
         cameraConfigWBWidget = findViewById(R.id.camera_config_wb_widget);
         cameraConfigStorageWidget = findViewById(R.id.camera_config_storage_widget);
         cameraConfigSSDWidget = findViewById(R.id.camera_config_ssd_widget);
-        lensControlWidget = findViewById(R.id.camera_lens_control);
         controlsWidget = findViewById(R.id.CameraCapturePanel);
         thermalPaletteWidget = findViewById(R.id.thermal_pallette_widget);
     }
@@ -530,7 +553,6 @@ public class CompleteWidgetActivity extends Activity {
         cameraConfigStorageWidget.updateKeyOnIndex(keyIndex, subKeyIndex);
         cameraConfigSSDWidget.updateKeyOnIndex(keyIndex, subKeyIndex);
         controlsWidget.updateKeyOnIndex(keyIndex, subKeyIndex);
-        lensControlWidget.updateKeyOnIndex(keyIndex, subKeyIndex);
         thermalPaletteWidget.updateKeyOnIndex(keyIndex, subKeyIndex);
         fpvOverlayWidget.updateKeyOnIndex(keyIndex, subKeyIndex);
     }
@@ -578,6 +600,10 @@ public class CompleteWidgetActivity extends Activity {
         TextView distance = findViewById(R.id.distance);
         CompleteWidgetActivity.this.runOnUiThread(() -> distance.setText(i));
     }
+    public void secondDisplay2(String i){
+        TextView distance2 = findViewById(R.id.distance2);
+        CompleteWidgetActivity.this.runOnUiThread(() -> distance2.setText(i));
+    }
     public void mainDisplay(String i){
         TextView date  = findViewById(R.id.dateText);
         CompleteWidgetActivity.this.runOnUiThread(() -> date.setText(i));
@@ -611,8 +637,7 @@ public class CompleteWidgetActivity extends Activity {
                         targetList = list;
                         FrameLayout layout = findViewById(R.id.targets_tags);
                         if(list.size() > 0){
-                            targets += "Operator_State: " + ST_operator.getCurrentState()
-                                    + "\nOperator_Mode: " + ST_operator.getCurrentNavigationMode() + "\n";
+                            targets += "State: " + ST_operator.getCurrentState()+ "\n\n";
                             layout.bringToFront();
                             //extracting IDs
                             IDs.clear();
@@ -629,13 +654,8 @@ public class CompleteWidgetActivity extends Activity {
                                 //getting target info
                                 targetX = t.getBoundInfo().getCenterX();
                                 targetY = t.getBoundInfo().getCenterY();
-                                targets += t.getType().toString() + "   |   " +t.getId()
-                                        +"\n laserdistance: " + df.format(laserDistance)
-                                        +"\n DeltaX: " + Math.abs(t.getBoundInfo().getCenterX()-0.5)
-                                        +"\n DeltaY: " + Math.abs(t.getBoundInfo().getCenterY()-0.5)
-                                        +"\n###################################\n";
-                                if(ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT)
-                                    targets += "\n speed: " + df.format(Math.sqrt(Math.pow(t.getVelocityInfo().getEast(),2)+Math.pow(t.getVelocityInfo().getNorth(),2)+Math.pow(t.getVelocityInfo().getUp(),2))*3.6);
+                                targets +=  " ID: " +t.getId() + "   |   " + t.getType().toString()
+                                        +"\n\n#################\n\n";
 
                                 if(findViewById(t.getId()) != null) {
                                     TextView targetTextView = findViewById(t.getId());
@@ -663,11 +683,16 @@ public class CompleteWidgetActivity extends Activity {
                                 }
                             }
                             mainDisplay(targets );
+                            if(ST_operator.getCurrentState() == SmartTrackState.SPOTLIGHT)
+                                secondDisplay2(df.format(Math.sqrt(Math.pow(targetList.get(0).getVelocityInfo().getEast(), 2) + Math.pow(targetList.get(0).getVelocityInfo().getNorth(), 2) + Math.pow(targetList.get(0).getVelocityInfo().getUp(), 2))*3.6) + "km/h");
+
                             targets = "";
                         }else{
                             targetX = -1;targetY = -1;
                             layout.removeAllViews();
-                            mainDisplay("no targets detected.");
+                            mainDisplay("No targets Detected");
+                            handler.postDelayed(()->{secondDisplay("");secondDisplay2("");},2000);
+
                         }
                     }
                 }catch(Exception e){
@@ -727,13 +752,6 @@ public class CompleteWidgetActivity extends Activity {
             rotateToAngle(-(y-0.5) * 40, (x-0.5) * 51,RotationMode.RELATIVE_ANGLE);
         }
     }
-    public void lookATarget2(View view){
-        camera.getLenses().get(0).setHybridZoomFocalLength(317,completionCallback);
-    }
-    public void lookATarget3(View view){
-        if(targetList.size()>2)
-            ST_operator.selectManualTarget(targetList.get(1).getBoundInfo(),selectTargetCallback);
-    }
     public void lookATarget4(View view){
         ST_operator.exitSmartTrack(exitSmartTrackCallback);
     }
@@ -769,7 +787,7 @@ public class CompleteWidgetActivity extends Activity {
             CompleteWidgetActivity.this.runOnUiThread(() ->{
                 TextView field = findViewById(R.id.minDist);
                 AlertDialog.Builder builder = new AlertDialog.Builder(CompleteWidgetActivity.this);
-                builder.setTitle("Input the minimum distance to measure (meters)");
+                builder.setTitle("Input the distance from the drone to the start of the auto tracking range (meters)");
                 final EditText input = new EditText(CompleteWidgetActivity.this);
                 input.setInputType(InputType.TYPE_CLASS_NUMBER);
                 builder.setView(input);
@@ -797,7 +815,7 @@ public class CompleteWidgetActivity extends Activity {
             CompleteWidgetActivity.this.runOnUiThread(() ->{
                 TextView field = findViewById(R.id.maxDist);
                 AlertDialog.Builder builder = new AlertDialog.Builder(CompleteWidgetActivity.this);
-                builder.setTitle("Input the maximum distance to measure (meters)");
+                builder.setTitle("Input the distance from the drone to the end of the auto tracking range (meters)");
                 final EditText input = new EditText(CompleteWidgetActivity.this);
                 input.setInputType(InputType.TYPE_CLASS_NUMBER);
                 builder.setView(input);
@@ -906,6 +924,9 @@ public class CompleteWidgetActivity extends Activity {
     }
     public void manualTrack(View view){
         tracktype = false;
+        FrameLayout tagslayout = findViewById(R.id.targets_tags);
+        if(tagslayout.getVisibility() == View.GONE)tagslayout.setVisibility(View.VISIBLE);
+        tagslayout.setVisibility(View.VISIBLE);
         findViewById(R.id.button12).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2bffed")));
         findViewById(R.id.button11).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#ffffff")));
         camera.getLenses().get(0).setHybridZoomFocalLength(317,completionCallback);
@@ -914,6 +935,8 @@ public class CompleteWidgetActivity extends Activity {
     }
     public void autoTrack(View view){
         tracktype = true;
+        FrameLayout tagslayout = findViewById(R.id.targets_tags);
+        if(tagslayout.getVisibility() == View.GONE)tagslayout.setVisibility(View.VISIBLE);
         minangle = Math.atan(minD/aircraftcords.getAltitude());
         maxangle = Math.atan(maxD/aircraftcords.getAltitude());
         findViewById(R.id.button11).setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#2bffed")));
@@ -922,11 +945,32 @@ public class CompleteWidgetActivity extends Activity {
         if(!speedsThread.isAlive())
             speedsThread.start();
     }
-    public void toggleLayout(RelativeLayout layout){
+    public void cycleScreen(View view){
+        if(current_screen == 2)current_screen = -1;
+        CameraVideoStreamSource[] sources = new CameraVideoStreamSource[]{CameraVideoStreamSource.ZOOM,CameraVideoStreamSource.WIDE,CameraVideoStreamSource.INFRARED_THERMAL};
+        String[] screen_names = new String[]{"Wide","IR","Zoom"};
+        camera.setCameraVideoStreamSource(sources[current_screen+1],completionCallback);
+        Button button = findViewById(R.id.cycle_screen);
+        button.setText(screen_names[current_screen+1]);
+        current_screen++;
+        FrameLayout tagslayout = findViewById(R.id.targets_tags);
+        if(current_screen>0)tagslayout.setVisibility(View.GONE);
+        else tagslayout.setVisibility(View.VISIBLE);
+    }
+    public void toggleLayout(RelativeLayout layout,RelativeLayout hideLayout){
         if(layout.getVisibility() == View.VISIBLE)
             layout.setVisibility(View.GONE);
-        else
+        else {
             layout.setVisibility(View.VISIBLE);
+            hideLayout.setVisibility(View.GONE);
+        }
+    }
+    public void toggleList(RelativeLayout layout){
+        if(layout.getVisibility() == View.VISIBLE)
+            layout.setVisibility(View.GONE);
+        else {
+            layout.setVisibility(View.VISIBLE);
+        }
     }
     public CommonCallbacks.CompletionCallback fetchMediacallback = new CommonCallbacks.CompletionCallback() {
         @Override
@@ -1001,6 +1045,7 @@ public class CompleteWidgetActivity extends Activity {
         @Override
         public void onResult(DJIError djiError) {
             FileOutputStream os;
+            handler.postDelayed(()->{secondDisplay("");secondDisplay2("");},1000);
             try {
                 os = new FileOutputStream(file, true);
                 os.write(("\n\nStop Tracking\n\n").getBytes());
@@ -1015,10 +1060,15 @@ public class CompleteWidgetActivity extends Activity {
     public void POST_image(byte[] img){
         final OkHttpClient client = new OkHttpClient.Builder().build();
         String uniqueID = UUID.randomUUID().toString();
+        String lat = "999",lng = "999";
+        if(!Double.isNaN(aircraftcords.getLongitude()))lng=Double.toString(aircraftcords.getLongitude());
+        if(!Double.isNaN(aircraftcords.getLatitude()))lat=Double.toString(aircraftcords.getLatitude());
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("recorded_speed", Double.toString(recorded_speed))
+                .addFormDataPart("recorded_speed", Double.toString(Math.round(recorded_speed)))
                 .addFormDataPart("speed_limit", Integer.toString(speed_limit))
+                .addFormDataPart("lat", lat)
+                .addFormDataPart("lng", lng)
                 .addFormDataPart("image", uniqueID+".jpeg",
                         RequestBody.create(MediaType.parse("image/jpeg"), img))
                 .build();
@@ -1053,15 +1103,22 @@ public class CompleteWidgetActivity extends Activity {
     SeekBar.OnSeekBarChangeListener zoomListener = new SeekBar.OnSeekBarChangeListener() {
         @Override
         public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-            int zoom = i + (zoomFactor-1) * 5530;
+            int zoom;
+            if(i>317)
+                zoom = i + (zoomFactor - 1) * 5530;
+            else
+                zoom = 317 + (zoomFactor - 1) * 5530;
             camera.getLenses().get(0).setHybridZoomFocalLength(zoom,completionCallback);
             double slope = 1.0 * ((zoomFactor*20) - ((zoomFactor-1)*20)) / (zoomMax - zoomMin);
-            double output = (zoomFactor)*20 + slope * (zoom - zoomMin);
+            double output = (zoomFactor-1)*20 + slope * (zoom - zoomMin);
             TextView currentzoom = findViewById(R.id.currentZoomFactor);
-            if(output < 1)currentzoom.setText("Zoom\n" + Math.round(1));
-            currentzoom.setText("Zoom\n" + Math.round(output));
+            if(output < 1)
+                currentzoom.setText("Zoom\n" + 1.0 + "x");
+            else
+                currentzoom.setText("Zoom\n" + df1.format(output) + "x");
 
         }
+
 
         @Override
         public void onStartTrackingTouch(SeekBar seekBar) {
@@ -1073,5 +1130,6 @@ public class CompleteWidgetActivity extends Activity {
 
         }
     };
+
 
 }

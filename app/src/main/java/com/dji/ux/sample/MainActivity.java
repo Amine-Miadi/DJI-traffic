@@ -4,14 +4,21 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.dji.frame.util.V_JsonUtil;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -28,7 +35,7 @@ import dji.sdk.sdkmanager.DJISDKManager;
 /** Main activity that displays three choices to user */
 public class MainActivity extends Activity {
     private AtomicBoolean isRegistrationInProgress = new AtomicBoolean(false);
-    private static boolean isAppStarted = false;
+    private static boolean isAppStarted = false, requestdone =false;
     private DJISDKManager.SDKManagerCallback registrationCallback = new DJISDKManager.SDKManagerCallback() {
 
         @Override
@@ -36,13 +43,21 @@ public class MainActivity extends Activity {
             isRegistrationInProgress.set(false);
             if (error == DJISDKError.REGISTRATION_SUCCESS) {
                 DJISDKManager.getInstance().startConnectionToProduct();
-
                 Toast.makeText(getApplicationContext(), "SDK registration succeeded!", Toast.LENGTH_LONG).show();
+                MainActivity.this.runOnUiThread(()->{
+                    Button enter = findViewById(R.id.enterbutton);
+                    enter.setEnabled(true);
+                    enter.setOnClickListener((view)->{
+                        Intent intent = new Intent(MainActivity.this, CompleteWidgetActivity.class);
+                        startActivity(intent);
+                    });
+                });
             } else {
 
                 Toast.makeText(getApplicationContext(),
                                "SDK registration failed, check network and retry!" + error.getDescription(),
                                Toast.LENGTH_LONG).show();
+                MainActivity.this.finish();
             }
         }
         @Override
@@ -106,16 +121,17 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        MainActivity.this.runOnUiThread(()->{
+            File dir = new File (getApplicationContext().getExternalFilesDir(null).toString() + "/logo/logo.jpeg");
+            File imgFile = new  File(dir.toURI());
+            if(imgFile.exists()){
+                Bitmap myBitmap = BitmapFactory.decodeFile(imgFile.getAbsolutePath());
+                ImageView myImage = (ImageView) findViewById(R.id.companylogo);
+                myImage.setImageBitmap(myBitmap);
+            };
+        });
         isAppStarted = true;
-        Intent intent = new Intent(this, CompleteWidgetActivity.class);
-        final Handler handler = new Handler();
         checkAndRequestPermissions();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                startActivity(intent);
-            }
-        }, 4000);
     }
 
     @Override
@@ -149,6 +165,7 @@ public class MainActivity extends Activity {
                                               missingPermission.toArray(new String[missingPermission.size()]),
                                               REQUEST_PERMISSION_CODE);
         }
+        requestdone = true;
     }
 
     /**
